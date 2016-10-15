@@ -1,0 +1,10 @@
+{
+    "name": "HackRice2016-Watson-Ads",
+    "description" : "HackRice2016-Watson-Ads",
+    "dependencies": {
+        "watson-developer-cloud": "*"
+    },
+    "engines" : {
+        "node" : "*"
+    }
+}
