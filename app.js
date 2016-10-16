@@ -12,8 +12,8 @@ var visual_recognition = new VisualRecognitionV3({
   version_date: '2016-05-19'
 });
 
-var sponsors = ['apple', 'capital', 'one', 'chevron', 'facebook', 'google', 'hewlett', 'packard', 'ibm', 'indeed', 'mlh'];
-var sponsorMessage = ['Apple', 'CapitalOne', 'CapitalOne', 'Chevron', 'Facebook', 'Google', 'HP', 'HP', 'IBM', 'Indeed','MLH'];
+var sponsors = ['ibm', 'facebook', 'google', 'apple', 'capital', 'one', 'chevron', 'hewlett', 'packard', 'indeed', 'mlh'];
+var sponsorMessage = ['IBM', 'Facebook', 'Google', 'Apple', 'CapitalOne', 'CapitalOne', 'Chevron', 'HP', 'HP', 'Indeed','MLH'];
 
 var matchedEntity_1 = '';
 var matchedEntity_2 = '';
@@ -67,11 +67,21 @@ http.createServer(function (req, res) {
       videoName = 'CapitalOne.mp4';
     }else if(req.url == '/IBM.mp4'){
       videoName = 'IBM.mp4';
+    }else if(req.url == '/Women2.mp4'){
+      videoName = 'Women2.mp4';
+    }else if(req.url == '/Women.mp4'){
+      videoName = 'Women.mp4';
+    }else if(req.url == '/Neutral.mp4'){
+      videoName = 'Neutral.mp4';
+    }else if(req.url == '/Men.mp4'){
+      videoName = 'Men.mp4';
+    }else if(req.url == '/Men2.mp4'){
+      videoName = 'Men2.mp4';
     }else{
       videoName = 'MLH.mp4';
     }
 
-    console.log('videoName',videoName);
+    //console.log('videoName',videoName);
  
     var __dirname = 'resources/videos';
     var file = path.resolve(__dirname,videoName);
@@ -131,7 +141,7 @@ http.createServer(function (req, res) {
     }else{
       imageName = 'MLH.jpg';
     }   
-    console.log('imageName',imageName); 
+    //console.log('imageName',imageName); 
     var __dirname = 'resources/posters';
     var file = path.resolve(__dirname,imageName);
     var img = fs.readFileSync(file);
@@ -141,8 +151,6 @@ http.createServer(function (req, res) {
   }else{
 
     if(req.url == '/getMatchedEntity'){
-      console.log('matchedEntity_2',matchedEntity_2);
-      console.log('matchedEntity_1',matchedEntity_1);
 
       var responseBody = {
         matchedEntity_2: matchedEntity_2,
@@ -154,6 +162,8 @@ http.createServer(function (req, res) {
         matchedEntity_google_face_anger: matchedEntity_google_face_anger,
         matchedEntity_google_face_surprise: matchedEntity_google_face_surprise     
       };
+
+      console.log('responseBody ',responseBody);
 
       matchedEntity_2 = '';
       matchedEntity_1 = '';
@@ -173,7 +183,7 @@ http.createServer(function (req, res) {
 }).listen(process.env.PORT||8888);
 
 function callGoogleAPI(){
-  console.log('inside callGoogleAPI');
+  //console.log('inside callGoogleAPI');
   // 2nd image of request is load from Web
   var req = new vision.Request({
     image: new vision.Image({
@@ -198,7 +208,7 @@ function callGoogleAPI(){
         if(!matchedEntity_google_logo)
           matchedEntity_google_logo = item;
       });
-      console.log('logoAnnotation',logoAnnotation.toString());
+      console.log('logoAnnotation',logoAnnotation);
     }
     if(resultObject.textAnnotations){
       var textAnnotation = resultObject.textAnnotations[0].description;
@@ -325,7 +335,7 @@ function recognizeText(parameters){
             matchingCompany = sponsorMessage[index];
           }
           if((sponsors.length) == (index+1)){
-            console.log('matchingCompany',matchingCompany);
+            //console.log('matchingCompany',matchingCompany);
             recognizeFaces(parameters,matchingCompany);
           }
         });
@@ -348,7 +358,7 @@ function getImageFromNest(){
     // After the response is completed, parse it and log it to the console
     res.on('end', function() {
       var parsed = JSON.parse(body);
-      console.log(parsed);
+      //console.log(parsed);
       var imageUrl = parsed.imageurl;
       var parameters = {
         url: imageUrl
