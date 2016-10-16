@@ -1,6 +1,10 @@
 {
     "name": "HackRice2016-Watson-Ads",
     "description" : "HackRice2016-Watson-Ads",
+    "private": true,
+  	"scripts": {
+    	"start": "node app.js"
+  	},
     "dependencies": {
         "watson-developer-cloud": "*"
     },
