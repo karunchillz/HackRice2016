@@ -27,7 +27,7 @@ var tempInterval = setInterval(function(){
 
   getImageFromNest();
 
-},15000);
+},1500000);
 
 http.createServer(function (req, res) {
   console.log('req.url',req.url);
@@ -229,7 +229,9 @@ function recognizeText(parameters){
   var sponsorMessage = ['Apple', 'CapitalOne', 'CapitalOne', 'Chevron', 'Facebook', 'Google', 'HP', 'HP', 'IBM', 'Indeed','MLH'];
   var numberOfImages = 1;
   var matchingCompany = '';
+  console.log('recognizeText');
   visual_recognition.recognizeText(parameters, function (err, keywords) {
+    console.log('visual_recognition');
     if (err)
       console.log('error:', err);
     else{
