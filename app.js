@@ -9,7 +9,8 @@ var visual_recognition = new VisualRecognitionV3({
   version_date: '2016-05-19'
 });
 
-var matchedEntity = '';
+var matchedEntity_1 = '';
+var matchedEntity_2 = '';
 
 var params_test = {
   url: 'http://13.84.145.193:9000/static/img.jpg'//fs.createReadStream('./resources/images/test_3.jpg')
@@ -19,7 +20,7 @@ var count = 5;
 var magicRatio = 1;
 
 var tempInterval = setInterval(function(){
-  if(count < 1)
+  if(count <= 1)
     clearInterval(tempInterval);
   else
     count = count - 1;
@@ -79,13 +80,14 @@ function recognizeFaces(parameters, recognizeTextResult){
             }
           }
           if(faces.length == (index+1)){
+            matchedEntity_1 = recognizeTextResult;
             magicRatio = maleNumber / femaleNumber;
             if(magicRatio < 0.6)
-              matchedEntity = 'Apple.mp4';
+              matchedEntity_2 = 'Apple.mp4';
             else if(0.60 <= magicRatio <= 1.4)
-              matchedEntity = 'Chevron.mp4';
+              matchedEntity_2 = 'Chevron.mp4';
             else if(magicRatio > 1.4)
-              matchedEntity = 'CapitalOne.mp4';
+              matchedEntity_2 = 'CapitalOne.mp4';
           } 
         });
       }
@@ -263,7 +265,7 @@ http.createServer(function (req, res) {
   }else{
 
     if(req.url == '/getMatchedEntity')
-      res.end(matchedEntity);
+      res.end(matchedEntity_2+'-'+matchedEntity_1);
   }
 
 }).listen(8888);
