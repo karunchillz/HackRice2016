@@ -205,8 +205,17 @@ function callGoogleAPI(){
     if(resultObject.logoAnnotations){
       var logoAnnotation = resultObject.logoAnnotations;
       logoAnnotation.forEach(function(item,index){
-        if(!matchedEntity_google_logo)
-          matchedEntity_google_logo = item;
+        if(!matchedEntity_google_logo){
+          var description = item.description;
+          if(description.indexOf(' ') > -1)
+            description = description.split(' ')[0];
+          sponsors.forEach(function(item,index){
+            if(description.toLowerCase().indexOf(item) > -1){
+              if(!matchedEntity_google_logo)
+                matchedEntity_google_logo = sponsorMessage[index];
+            }
+          });
+        }
       });
       console.log('logoAnnotation',logoAnnotation);
     }
