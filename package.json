@@ -6,7 +6,8 @@
     	"start": "node app.js"
   	},
     "dependencies": {
-        "watson-developer-cloud": "*"
+        "watson-developer-cloud": "*",
+        "node-cloud-vision-api": "*"
     },
     "engines" : {
         "node" : "*"

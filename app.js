@@ -1,3 +1,6 @@
+var vision = require('node-cloud-vision-api')
+vision.init({auth: 'AIzaSyCbDDuE_7XnbPTfJtMhgWWETzQTcnpKRlY'})
+
 var VisualRecognitionV3 = require('watson-developer-cloud/visual-recognition/v3');
 var fs = require("fs"),
     http = require("http"),
@@ -5,18 +8,27 @@ var fs = require("fs"),
     path = require("path");
 
 var visual_recognition = new VisualRecognitionV3({
-  api_key: '37745a59c469e745974eac39b50a52752a803887',
+  api_key: '513bbcd9cbce91d28ba03fd2492cde32f3b66f9a'/*'37745a59c469e745974eac39b50a52752a803887'*/,
   version_date: '2016-05-19'
 });
 
+var sponsors = ['apple', 'capital', 'one', 'chevron', 'facebook', 'google', 'hewlett', 'packard', 'ibm', 'indeed', 'mlh'];
+var sponsorMessage = ['Apple', 'CapitalOne', 'CapitalOne', 'Chevron', 'Facebook', 'Google', 'HP', 'HP', 'IBM', 'Indeed','MLH'];
+
 var matchedEntity_1 = '';
 var matchedEntity_2 = '';
+var matchedEntity_google_text = '';
+var matchedEntity_google_logo = '';
+var matchedEntity_google_face_joy = '';
+var matchedEntity_google_face_sorrow = '';
+var matchedEntity_google_face_anger = '';
+var matchedEntity_google_face_surprise = '';
 
 var params_test = {
   url: 'http://13.84.145.193:9000/static/img.jpg'//fs.createReadStream('./resources/images/test_3.jpg')
 };
 
-var count = 50;
+var count = 10;
 var magicRatio = 1;
 
 var tempInterval = setInterval(function(){
@@ -27,7 +39,7 @@ var tempInterval = setInterval(function(){
 
   getImageFromNest();
 
-},1500000);
+},15000);
 
 http.createServer(function (req, res) {
   console.log('req.url',req.url);
@@ -134,10 +146,24 @@ http.createServer(function (req, res) {
 
       var responseBody = {
         matchedEntity_2: matchedEntity_2,
-        matchedEntity_1: matchedEntity_1
+        matchedEntity_1: matchedEntity_1,
+        matchedEntity_google_text:  matchedEntity_google_text,
+        matchedEntity_google_logo: matchedEntity_google_logo,
+        matchedEntity_google_face_joy: matchedEntity_google_face_joy,
+        matchedEntity_google_face_sorrow: matchedEntity_google_face_sorrow, 
+        matchedEntity_google_face_anger: matchedEntity_google_face_anger,
+        matchedEntity_google_face_surprise: matchedEntity_google_face_surprise     
       };
+
       matchedEntity_2 = '';
       matchedEntity_1 = '';
+      matchedEntity_google_text = '';
+      matchedEntity_google_logo = '';
+      matchedEntity_google_face_joy = '';
+      matchedEntity_google_face_sorrow = '';
+      matchedEntity_google_face_anger = '';
+      matchedEntity_google_face_surprise = '';
+
       res.writeHead(200, {"Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "X-Requested-With"});
       res.write(JSON.stringify(responseBody));
       res.end();      
@@ -146,9 +172,65 @@ http.createServer(function (req, res) {
 
 }).listen(process.env.PORT||8888);
 
+function callGoogleAPI(){
+  console.log('inside callGoogleAPI');
+  // 2nd image of request is load from Web
+  var req = new vision.Request({
+    image: new vision.Image({
+      url: 'http://13.84.145.193:9000/static/img.jpg'
+    }),
+    features: [
+      new vision.Feature('FACE_DETECTION', 10),
+      new vision.Feature('TEXT_DETECTION', 10),
+      new vision.Feature('LOGO_DETECTION', 10),
+      new vision.Feature('LABEL_DETECTION', 10),
+    ]
+  })
+
+  // send single request
+  vision.annotate(req).then((res) => {
+    // handling response
+    //console.log(JSON.stringify(res.responses))
+    var resultObject = res.responses[0];
+    if(resultObject.logoAnnotations){
+      var logoAnnotation = resultObject.logoAnnotations;
+      logoAnnotation.forEach(function(item,index){
+        if(!matchedEntity_google_logo)
+          matchedEntity_google_logo = item;
+      });
+      console.log('logoAnnotation',logoAnnotation.toString());
+    }
+    if(resultObject.textAnnotations){
+      var textAnnotation = resultObject.textAnnotations[0].description;
+      sponsors.forEach(function(item,index){
+        if(textAnnotation.toLowerCase().indexOf(item) > -1){
+          if(!matchedEntity_google_text)
+            matchedEntity_google_text = sponsorMessage[index];
+        }        
+      });
+      console.log('textAnnotation Result',textAnnotation.split('\n'));
+    }
+    if(resultObject.faceAnnotations){
+      var faceAnnotations = resultObject.faceAnnotations;
+      faceAnnotations.forEach(function(item,index){
+        matchedEntity_google_face_joy = matchedEntity_google_face_joy + ' :: ' + item.joyLikelihood;
+        matchedEntity_google_face_sorrow = matchedEntity_google_face_sorrow + ' :: ' + item.sorrowLikelihood;
+        matchedEntity_google_face_anger = matchedEntity_google_face_anger + ' :: ' + item.angerLikelihood;
+        matchedEntity_google_face_surprise = matchedEntity_google_face_surprise + ' :: ' + item.surpriseLikelihood;
+        if(item.length == (index+1)){
+          console.log('matchedEntity_google_face_joy ',matchedEntity_google_face_joy);
+          console.log('matchedEntity_google_face_sorrow ',matchedEntity_google_face_sorrow);
+          console.log('matchedEntity_google_face_anger ',matchedEntity_google_face_anger);
+          console.log('matchedEntity_google_face_surprise ',matchedEntity_google_face_surprise);
+        }
+      });
+    }
+  }, (e) => {
+    console.log('Error: ', e)
+  })
+}
+
 function recognizeFaces(parameters, recognizeTextResult){
-  console.log('recognizeTextResult',recognizeTextResult);
-  console.log('parameters',parameters);
   var maleAgeMapping = initializeAgeMapping();
   var femaleAgeMapping = initializeAgeMapping();
   var numberOfImages = 1;
@@ -159,52 +241,57 @@ function recognizeFaces(parameters, recognizeTextResult){
     if (err)
       console.log('error:', err);
     else{
-      console.log(JSON.stringify(keywords, null, 2));
+      //console.log(JSON.stringify(keywords, null, 2));
       if(keywords.images_processed == numberOfImages){
         var faces = keywords.images[0].faces;
         faces.forEach(function(item,index){
           var gender = item.gender.gender;
           var avgAge = (item.age.max + item.age.min)/2;
+          var tempIndex = '';
           if(gender == 'FEMALE'){
             femaleNumber = femaleNumber + 1;
             if(avgAge <= 20){
-              var tempIndex = femaleAgeMapping.indexOf('<=20');
+              tempIndex= femaleAgeMapping.indexOf('<=20');
               femaleAgeMapping[tempIndex] = femaleAgeMapping[tempIndex] + 1;
             }else if(21<= avgAge <= 40){
-              var tempIndex = femaleAgeMapping.indexOf('21-40');
+              tempIndex = femaleAgeMapping.indexOf('21-40');
               femaleAgeMapping[tempIndex] = femaleAgeMapping[tempIndex] + 1;
             }else if(41<= avgAge <= 60){
-              var tempIndex = femaleAgeMapping.indexOf('41-60');
+              tempIndex = femaleAgeMapping.indexOf('41-60');
               femaleAgeMapping[tempIndex] = femaleAgeMapping[tempIndex] + 1;
             }else if(avgAge >= 60){
-              var tempIndex = femaleAgeMapping.indexOf('>=61');
+              tempIndex = femaleAgeMapping.indexOf('>=61');
               femaleAgeMapping[tempIndex] = femaleAgeMapping[tempIndex] + 1;
             }
           }else{
             maleNumber = maleNumber + 1;
             if(avgAge <= 20){
-              var tempIndex = maleAgeMapping.indexOf('<=20');
+              tempIndex = maleAgeMapping.indexOf('<=20');
               maleAgeMapping[tempIndex] = maleAgeMapping[tempIndex] + 1;
             }else if(21<= avgAge <= 40){
-              var tempIndex = maleAgeMapping.indexOf('21-40');
+              tempIndex = maleAgeMapping.indexOf('21-40');
               maleAgeMapping[tempIndex] = maleAgeMapping[tempIndex] + 1;
             }else if(41<= avgAge <= 60){
-              var tempIndex = maleAgeMapping.indexOf('41-60');
+              tempIndex = maleAgeMapping.indexOf('41-60');
               maleAgeMapping[tempIndex] = maleAgeMapping[tempIndex] + 1;
             }else if(avgAge >= 60){
-              var tempIndex = maleAgeMapping.indexOf('>=61');
+              tempIndex = maleAgeMapping.indexOf('>=61');
               maleAgeMapping[tempIndex] = maleAgeMapping[tempIndex] + 1;
             }
           }
           if(faces.length == (index+1)){
             matchedEntity_1 = recognizeTextResult;
-            magicRatio = maleNumber / femaleNumber;
-            if(magicRatio < 0.6)
-              matchedEntity_2 = 'Apple.mp4';
-            else if(0.60 <= magicRatio <= 1.4)
-              matchedEntity_2 = 'Chevron.mp4';
-            else if(magicRatio > 1.4)
-              matchedEntity_2 = 'CapitalOne.mp4';
+            magicRatio = maleNumber / (femaleNumber == 0 ? 1: femaleNumber);
+            if(magicRatio < 0.5)
+              matchedEntity_2 = 'Women2.mp4';
+            else if(0.50 <= magicRatio < 1.0)
+              matchedEntity_2 = 'Women.mp4';
+            else if(1.0 <= magicRatio < 2.0)
+              matchedEntity_2 = 'Neutral.mp4';
+            else if(2.0 <= magicRatio < 3.0)
+              matchedEntity_2 = 'Men.mp4';
+            else if(magicRatio >= 3.0)
+              matchedEntity_2 = 'Men2.mp4';
           } 
         });
       }
@@ -224,23 +311,16 @@ function initializeAgeMapping(){
 }
 
 function recognizeText(parameters){
-  console.log('recognizeText',parameters);
-  var sponsors = ['apple', 'capital', 'one', 'chevron', 'facebook', 'google', 'hewlett', 'packard', 'ibm', 'indeed', 'mlh'];
-  var sponsorMessage = ['Apple', 'CapitalOne', 'CapitalOne', 'Chevron', 'Facebook', 'Google', 'HP', 'HP', 'IBM', 'Indeed','MLH'];
   var numberOfImages = 1;
   var matchingCompany = '';
-  console.log('recognizeText');
   visual_recognition.recognizeText(parameters, function (err, keywords) {
-    console.log('visual_recognition');
     if (err)
       console.log('error:', err);
     else{
-      console.log(JSON.stringify(keywords, null, 2));
-      console.log('keywords.images_processed',keywords.images_processed);
+      //console.log(JSON.stringify(keywords, null, 2));
       if(keywords.images_processed == numberOfImages){
         var imageTextConsolidated = keywords.images[0].text;
         sponsors.forEach(function(item,index){
-          console.log('item',item);
           if(!matchingCompany && imageTextConsolidated.indexOf(item) > -1){
             matchingCompany = sponsorMessage[index];
           }
@@ -273,6 +353,7 @@ function getImageFromNest(){
       var parameters = {
         url: imageUrl
       };
+      callGoogleAPI();
       recognizeText(parameters);
     });
   })
